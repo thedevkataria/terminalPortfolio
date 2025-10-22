@@ -510,13 +510,16 @@
                 const input = commandInput.value.trim();
                 processCommand(input);
                 commandInput.value = '';
-            } else if (e.key === 'ArrowUp') {
+                autocompleteState = null; // reset autocomplete
+            } 
+            else if (e.key === 'ArrowUp') {
                 e.preventDefault();
                 if (historyIndex > 0) {
                     historyIndex--;
                     commandInput.value = commandHistory[historyIndex];
                 }
-            } else if (e.key === 'ArrowDown') {
+            } 
+            else if (e.key === 'ArrowDown') {
                 e.preventDefault();
                 if (historyIndex < commandHistory.length - 1) {
                     historyIndex++;
@@ -525,8 +528,49 @@
                     historyIndex = commandHistory.length;
                     commandInput.value = '';
                 }
+            } 
+            else if (e.key === 'Tab') {
+                e.preventDefault();
+                handleAutocomplete();
             }
         });
+
+        let autocompleteState = null; // keep track of multiple matches
+
+        const handleAutocomplete = () => {
+            let input = commandInput.value;
+            let parts = input.split(' ');
+            let cmd = parts[0];
+            let arg = parts.slice(1).join(''); // what we want to autocomplete
+
+            if (!arg && cmd !== 'cd' && cmd !== 'cat' && cmd !== 'open') return;
+
+            const currentDir = getCurrentDir();
+            if (!currentDir) return;
+
+            // Filter items that start with arg
+            const matches = Object.keys(currentDir).filter(item => item.startsWith(arg));
+
+            if (matches.length === 0) return;
+
+            // If only one match, autocomplete fully
+            if (matches.length === 1) {
+                parts[parts.length - 1] = matches[0];
+                commandInput.value = parts.join(' ') + (currentDir[matches[0]].type === 'dir' ? '/' : '');
+                autocompleteState = null;
+            } 
+            else {
+                // Multiple matches: cycle through them if tab pressed repeatedly
+                if (!autocompleteState || autocompleteState.items.join() !== matches.join()) {
+                    autocompleteState = { items: matches, index: 0 };
+                } else {
+                    autocompleteState.index = (autocompleteState.index + 1) % matches.length;
+                }
+                parts[parts.length - 1] = autocompleteState.items[autocompleteState.index];
+                commandInput.value = parts.join(' ');
+            }
+        };
+
 
         // Autofocus on the input field when the body is clicked
         document.body.addEventListener('click', () => {
