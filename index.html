@@ -217,7 +217,7 @@
                             },
                         }
                     },
-                    
+
                     'Skills': {
                         'type': 'dir',
                         'contents': {
@@ -363,29 +363,53 @@
 
         /** Changes the current working directory. */
         const handleCd = (targetDir) => {
-            const currentDir = getCurrentDir();
-
-            if (targetDir === '..') {
-                if (cwd.length > 1) { // Prevent going above the root folder
-                    cwd.pop();
-                    updatePrompt();
-                }
+            if (!targetDir || targetDir === '') {
+                cwd = ['userDevKataria'];
+                updatePrompt();
                 return;
             }
 
-            const targetItem = currentDir[targetDir];
+            const currentDir = getCurrentDir();
 
-            if (!targetDir || targetDir === '') {
-                 // cd with no argument returns to root (userDevKataria)
-                 cwd = ['userDevKataria'];
-            } else if (targetItem && targetItem.type === 'dir') {
-                cwd.push(targetDir);
-            } else if (targetItem) {
-                printOutput(`cd: not a directory: ${targetDir}`, true);
-            } else {
-                printOutput(`cd: no such file or directory: ${targetDir}`, true);
+            // Split path into parts
+            const parts = targetDir.split('/');
+
+            // Make a copy of cwd to manipulate
+            let newCwd = [...cwd];
+
+            for (const part of parts) {
+                if (part === '.' || part === '') continue; // Current dir
+                else if (part === '..') {
+                    if (newCwd.length > 1) newCwd.pop(); // Prevent going above root
+                } else {
+                    const tempDir = getDirFromCwd(newCwd); // Helper to get dir object from path
+                    if (!tempDir[part]) {
+                        printOutput(`cd: no such file or directory: ${targetDir}`, true);
+                        return;
+                    } else if (tempDir[part].type !== 'dir') {
+                        printOutput(`cd: not a directory: ${targetDir}`, true);
+                        return;
+                    } else {
+                        newCwd.push(part);
+                    }
+                }
             }
+
+            cwd = newCwd;
             updatePrompt();
+        };
+
+        // Helper to get directory object from arbitrary cwd
+        const getDirFromCwd = (pathArray) => {
+            let current = fileSystem;
+            for (const dirName of pathArray) {
+                if (current[dirName] && current[dirName].type === 'dir') {
+                    current = current[dirName].contents;
+                } else {
+                    return null;
+                }
+            }
+            return current;
         };
 
         /** Displays the content of a file. */
