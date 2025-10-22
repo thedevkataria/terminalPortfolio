@@ -545,29 +545,47 @@
 
             if (!arg && cmd !== 'cd' && cmd !== 'cat' && cmd !== 'open') return;
 
-            const currentDir = getCurrentDir();
-            if (!currentDir) return;
+            // Split the path into directory + prefix to complete
+            let pathParts = arg.split('/');
+            let prefix = pathParts.pop(); // the part we are trying to autocomplete
 
-            // Filter items that start with arg
-            const matches = Object.keys(currentDir).filter(item => item.startsWith(arg));
+            // Resolve the target directory based on relative path
+            let tempCwd = [...cwd];
+            for (const part of pathParts) {
+                if (part === '..') {
+                    if (tempCwd.length > 1) tempCwd.pop();
+                } else if (part !== '.' && part !== '') {
+                    const tempDir = getDirFromCwd(tempCwd);
+                    if (!tempDir[part] || tempDir[part].type !== 'dir') return;
+                    tempCwd.push(part);
+                }
+            }
 
+            const targetDir = getDirFromCwd(tempCwd);
+            if (!targetDir) return;
+
+            // Filter items that start with prefix
+            const matches = Object.keys(targetDir).filter(item => item.startsWith(prefix));
             if (matches.length === 0) return;
 
-            // If only one match, autocomplete fully
             if (matches.length === 1) {
-                parts[parts.length - 1] = matches[0];
-                commandInput.value = parts.join(' ') + (currentDir[matches[0]].type === 'dir' ? '/' : '');
+                // Single match: autocomplete fully
+                pathParts.push(matches[0]);
+                if (targetDir[matches[0]].type === 'dir') pathParts[pathParts.length - 1] += '/';
+                parts[parts.length - 1] = pathParts.join('/');
+                commandInput.value = parts.join(' ');
                 autocompleteState = null;
-            } 
-            else {
-                // Multiple matches: cycle through them if tab pressed repeatedly
+            } else {
+                // Multiple matches: cycle through them
                 if (!autocompleteState || autocompleteState.items.join() !== matches.join()) {
-                    autocompleteState = { items: matches, index: 0 };
+                    autocompleteState = { items: matches, index: 0, pathParts: [...pathParts] };
                 } else {
                     autocompleteState.index = (autocompleteState.index + 1) % matches.length;
                 }
-                parts[parts.length - 1] = autocompleteState.items[autocompleteState.index];
-                commandInput.value = parts.join(' ');
+                let selected = autocompleteState.items[autocompleteState.index];
+                let newPathParts = [...autocompleteState.pathParts, selected];
+                parts[parts.length - 1] = newPathParts.join('/');
+                commandInput.value = parts.join('');
             }
         };
 
