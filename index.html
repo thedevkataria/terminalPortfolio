@@ -258,17 +258,24 @@ May 2023 - July 2023 | Bangalore, Karnataka
                         } 
                     },
 
+                    // Located within the fileSystem object, inside 'userDevKataria' -> 'contents' -> 'Contact'
                     'Contact': {
                         'type': 'dir',
                         'contents': {
-                            'linkedin.exe': { 'type': 'link', 'content': 'https://www.linkedin.com/in/dev-kataria-92a0951ba/' }, // Placeholder: REPLACE WITH YOUR ACTUAL URL
+                            'linkedin.exe': { 'type': 'link', 'content': 'https://www.linkedin.com/in/dev-kataria-92a0951ba/' }, 
+                            // --- THIS LINE WAS UPDATED TO USE THE GMAIL URL ---
                             'email.exe': { 
                                 'type': 'link', 
-                                'content': 'mailto:devkataria.iitd@gmail.com?subject=Interview%20Invitation&body=Dear%20Dev,%0A%0AYou%20have%20been%20invited%20for%20an%20interview%20at%20our%20company.%20Please%20reply%20with%20suitable%20timing%20slot%20for%20interview%20scheduling.%0A%0AThank%20You,%0AHR%20Team' 
-                            }, // Placeholder: REPLACE WITH YOUR ACTUAL EMAIL
-                            'phone.txt': { 'type': 'file', 'content': 'Phone: +91-8385954024' }, // Placeholder: REPLACE WITH YOUR ACTUAL NUMBER
-                        }
+                                'content': 'https://mail.google.com/mail/?view=cm&fs=1&to=devkataria.iitd@gmail.com&su=Interview%20Invitation&body=Dear%20Dev,%0A%0AYou%20have%20been%20invited%20for%20an%20interview%20at%20our%20company.%20Please%20reply%20with%20appropriate%20timing%20slot%20for%20interview%20scheduling.%0A%0AThank%20You,%0AHR%20Team' 
+                            },
+                            'getContacts.txt': { 
+                                'type': 'file',
+                                'content': `Email: devkataria.iitd@gmail.com
+Phone: +91-8385954024
+LinkedIn: https://www.linkedin.com/in/dev-kataria-92a0951ba/` 
+                            }
                     },
+
                     'info.txt': { 'type': 'file', 'content': 'Welcome to Dev Kataria\'s terminal portfolio!\n\nAvailable Commands:\n- info/help: Display this message.\n- ls: List files and directories.\n- cd: Change directory (use \'..\' to go up).\n- cat <file>: Display file contents.\n- clear: Clear the terminal.\n- whoami: Display user context.\n- open : Execute virtual executables (e.g., open linkedin.exe).\n\nStart by typing \'ls\' or \'cd About\'\n' }
                 }
             }
