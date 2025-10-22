@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dev Kataria | Terminal Portfolio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --terminal-bg: #1c1c1c;
+            --terminal-fg: #00ff00; /* Green/Lime */
+            --prompt-fg: #6fa8ff; /* Blue */
+            --dir-fg: #7affc8; /* Light Cyan */
+            --file-fg: #ffffff; /* White */
+            --exe-fg: #ffc46f; /* Amber/Orange */
+        }
+        body {
+            font-family: 'Fira Code', monospace;
+            background-color: #0d0d0d;
+            height: 100vh;
+            overflow: hidden;
+            color: var(--file-fg);
+        }
+        #terminal-container {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            padding: 1rem;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        #output-history {
+            flex-grow: 1;
+            overflow-y: auto;
+            /* Scrollbar styling for a cleaner look */
+            scrollbar-width: thin;
+            scrollbar-color: #333 var(--terminal-bg);
+            padding-bottom: 0.5rem;
+        }
+        .line-output {
+            line-height: 1.5;
+        }
+        .dir-color { color: var(--dir-fg); }
+        .file-color { color: var(--file-fg); }
+        .exe-color { color: var(--exe-fg); }
+        .prompt-color { color: var(--prompt-fg); }
+        .error-color { color: #ff6f6f; }
+        input[type="text"] {
+            caret-color: var(--terminal-fg);
+            outline: none;
+            background: transparent;
+            border: none;
+            color: var(--terminal-fg);
+            width: 100%;
+            padding: 0;
+            margin: 0;
+        }
+        .terminal-shadow {
+            box-shadow: 0 0 25px rgba(0, 255, 0, 0.2);
+            border: 1px solid rgba(0, 255, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+
+    <div id="terminal-container" class="bg-[var(--terminal-bg)] terminal-shadow rounded-lg mt-4 mb-4">
+        
+        <!-- Output History Area -->
+        <div id="output-history" class="text-sm p-4">
+            <!-- Initial content will be injected here -->
+        </div>
+
+        <!-- Input Area -->
+        <div id="input-line" class="flex items-center p-4 pt-2 border-t border-gray-800">
+            <span id="prompt-text" class="prompt-color text-sm font-bold mr-2 whitespace-nowrap"></span>
+            <input type="text" id="command-input" autocomplete="off" autofocus class="flex-1 text-sm">
+        </div>
+
+    </div>
+
+    <script>
+        // --- DATA STRUCTURE: The Virtual File System ---
+
+        const fileSystem = {
+            'userDevKataria': {
+                'type': 'dir',
+                'contents': {
+                    'About': { 'type': 'dir', 'contents': { 'readme.txt': { 'type': 'file', 'content': 'Hi! I am Dev Kataria, a driven engineering graduate from IIT Delhi. I specialize in backend development, systems design, and problem-solving. This portfolio is designed to be explored via the command line.' } } },
+                    'Experience': {
+                        'type': 'dir',
+                        'contents': {
+                            'SamsungR&D': { 'type': 'dir', 'contents': { 'readme.txt': { 'type': 'file', 'content': '**Samsung R&D (Software Engineering Intern, 2023)**\n- Developed and optimized cloud-based services for IoT platforms.\n- Focused on improving data latency and implementing robust security protocols.' } } },
+                            'PiramalFinance': { 'type': 'dir', 'contents': { 'readme.txt': { 'type': 'file', 'content': '**Piramal Finance (Data Science Intern, 2022)**\n- Created predictive models for credit risk assessment using machine learning techniques.\n- Implemented data pipelines using Python and Spark.' } } }
+                        }
+                    },
+                    'Projects': {
+                        'type': 'dir',
+                        'contents': {
+                            'Project1': { 'type': 'dir', 'contents': { 'readme.txt': { 'type': 'file', 'content': '**Project Name: Distributed Cache System (P1)**\n- A high-performance, distributed in-memory cache system built using Go.\n- Features include LRU eviction policy, horizontal scaling, and fault tolerance.' } } },
+                            'Project2': { 'type': 'dir', 'contents': { 'readme.txt': { 'type': 'file', 'content': '**Project Name: Real-time Data Pipeline (P2)**\n- Used Kafka, Spark Streaming, and PostgreSQL to ingest and process streaming social media data.\n- Built a real-time dashboard for sentiment analysis.' } } },
+                            'Project3': { 'type': 'dir', 'contents': { 'readme.txt': { 'type': 'file', 'content': '**Project Name: Open-source CLI Tool (P3)**\n- Contributed to a popular open-source utility, focusing on improving the parsing and validation logic in C++.' } } },
+                            'Project4': { 'type': 'dir', 'contents': { 'readme.txt': { 'type': 'file', 'content': '**Project Name: E-commerce Backend API (P4)**\n- Developed a scalable RESTful API for an e-commerce platform using Python (Django) and integrated Stripe for payments.' } } },
+                        }
+                    },
+                    'Education': {
+                        'type': 'dir',
+                        'contents': {
+                            'IITDelhi_BTech': { 'type': 'dir', 'contents': { 'readme.txt': { 'type': 'file', 'content': '**Indian Institute of Technology, Delhi**\n- B.Tech in Computer Science and Engineering (2020 - 2024)\n- GPA: 9.X/10.0' } } },
+                            'GHKPS_SeniorSecondary': { 'type': 'dir', 'contents': { 'readme.txt': { 'type': 'file', 'content': '**Guru Harkrishan Public School, New Delhi**\n- Senior Secondary Education (2018 - 2020)\n- Score: 9X%' } } },
+                        }
+                    },
+                    'Skills': {
+                        'type': 'dir',
+                        'contents': {
+                            'ProgrammingLanguages.txt': { 'type': 'file', 'content': 'Languages: Python, Go, Java, C++, JavaScript, TypeScript, SQL.' },
+                            'ToolsAndLibraries.txt': { 'type': 'file', 'content': 'Tools/Libraries: AWS, Docker, Kubernetes, Terraform, PostgreSQL, MongoDB, Kafka, Spark, Git/GitHub, CI/CD, React.' },
+                        }
+                    },
+                    'Achievements': { 'type': 'dir', 'contents': { 'readme.txt': { 'type': 'file', 'content': '**Key Achievements**\n- Finalist in National Level Hackathon (2023).\n- Top 1% on competitive programming platforms.\n- Dean\'s List recognition for academic excellence (multiple semesters).' } } },
+                    'ExtraCurriculars': { 'type': 'dir', 'contents': { 'readme.txt': { 'type': 'file', 'content': '**Extra-Curricular Activities**\n- Lead Developer, College Tech Club: Organized workshops and mentored juniors on open-source contributions.\n- Varsity Badminton Team: Represented the college at inter-collegiate tournaments.' } } },
+                    'Contact': {
+                        'type': 'dir',
+                        'contents': {
+                            'linkedin.exe': { 'type': 'link', 'content': 'https://www.linkedin.com/in/YOUR_LINKEDIN_USERNAME' }, // Placeholder: REPLACE WITH YOUR ACTUAL URL
+                            'email.exe': { 'type': 'link', 'content': 'mailto:YOUR_EMAIL@EXAMPLE.COM?subject=Portfolio%20Inquiry' }, // Placeholder: REPLACE WITH YOUR ACTUAL EMAIL
+                            'phone.txt': { 'type': 'file', 'content': 'Phone: +91-99999-99999 (Please use email for initial contact)' }, // Placeholder: REPLACE WITH YOUR ACTUAL NUMBER
+                        }
+                    },
+                    'info.txt': { 'type': 'file', 'content': 'Welcome to Dev Kataria\'s terminal portfolio!\n\nAvailable Commands:\n- info/help: Display this message.\n- ls: List files and directories.\n- cd <dir>: Change directory (use \'..\' to go up).\n- cat <file>: Display file contents.\n- clear: Clear the terminal.\n- whoami: Display user context.\n- open <file>: Execute virtual executables (e.g., open linkedin.exe).\n\nStart by typing \'ls\' or \'cd About\'\n' }
+                }
+            }
+        };
+
+
+        // --- STATE AND DOM ELEMENTS ---
+
+        const outputHistory = document.getElementById('output-history');
+        const commandInput = document.getElementById('command-input');
+        const promptText = document.getElementById('prompt-text');
+
+        // Initial current working directory (CWD) path, starting at root folder
+        let cwd = ['userDevKataria'];
+        let commandHistory = [];
+        let historyIndex = -1;
+
+        const userName = 'guest';
+        const hostName = 'devkataria.com';
+
+        // --- UTILITY FUNCTIONS ---
+
+        /** Returns the current directory object in the fileSystem based on the cwd path array. */
+        const getCurrentDir = () => {
+            let current = fileSystem;
+            for (const dirName of cwd) {
+                if (current[dirName] && current[dirName].type === 'dir') {
+                    current = current[dirName].contents;
+                } else {
+                    // This should theoretically not happen if navigation is correct
+                    return null;
+                }
+            }
+            return current;
+        };
+
+        /** Updates the prompt display with the current working directory. */
+        const updatePrompt = () => {
+            const currentPath = '~/' + (cwd.length > 1 ? cwd.slice(1).join('/') : '');
+            promptText.innerHTML = `<span class="prompt-color">${userName}@${hostName}</span>:<span class="dir-color">${currentPath}</span>$`;
+        };
+
+        /** Appends an output line to the terminal history. */
+        const printOutput = (htmlContent, isError = false) => {
+            const outputDiv = document.createElement('div');
+            outputDiv.className = `line-output ${isError ? 'error-color' : 'text-[var(--terminal-fg)]'} whitespace-pre-wrap`;
+            outputDiv.innerHTML = htmlContent;
+            outputHistory.appendChild(outputDiv);
+            outputHistory.scrollTop = outputHistory.scrollHeight; // Scroll to bottom
+        };
+
+        /** Prints the user's executed command line. */
+        const printCommand = (command) => {
+            printOutput(`<span class="prompt-color">${userName}@${hostName}</span>:<span class="dir-color">~/${cwd.slice(1).join('/')}</span>$ ${command}`, false);
+        };
+
+        /** Converts markdown style content to HTML (simple bold/newline conversion). */
+        const formatContent = (content) => {
+            let html = content.replace(/\n/g, '<br>');
+            html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            return html;
+        }
+
+        // --- COMMAND HANDLERS ---
+
+        /** Displays help/info message. */
+        const handleInfo = () => {
+            const rootContents = fileSystem.userDevKataria.contents;
+            const infoFile = rootContents['info.txt'];
+            if (infoFile && infoFile.type === 'file') {
+                printOutput(formatContent(infoFile.content));
+            }
+        };
+
+        /** Lists contents of the current directory. */
+        const handleLs = () => {
+            const currentDir = getCurrentDir();
+            if (!currentDir) {
+                printOutput('Error: Invalid directory path.', true);
+                return;
+            }
+
+            const items = Object.keys(currentDir).sort();
+            if (items.length === 0) return;
+
+            // Simple responsive grid output
+            let outputHtml = '<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-y-1">';
+
+            items.forEach(item => {
+                const itemData = currentDir[item];
+                let className = 'file-color';
+                if (itemData.type === 'dir') {
+                    className = 'dir-color';
+                    item = item + '/'; // Append slash for folders
+                } else if (item.endsWith('.exe') || itemData.type === 'link') {
+                    className = 'exe-color';
+                }
+
+                outputHtml += `<span class="${className}">${item}</span>`;
+            });
+
+            outputHtml += '</div>';
+            printOutput(outputHtml);
+        };
+
+        /** Changes the current working directory. */
+        const handleCd = (targetDir) => {
+            const currentDir = getCurrentDir();
+
+            if (targetDir === '..') {
+                if (cwd.length > 1) { // Prevent going above the root folder
+                    cwd.pop();
+                    updatePrompt();
+                }
+                return;
+            }
+
+            const targetItem = currentDir[targetDir];
+
+            if (!targetDir || targetDir === '') {
+                 // cd with no argument returns to root (userDevKataria)
+                 cwd = ['userDevKataria'];
+            } else if (targetItem && targetItem.type === 'dir') {
+                cwd.push(targetDir);
+            } else if (targetItem) {
+                printOutput(`cd: not a directory: ${targetDir}`, true);
+            } else {
+                printOutput(`cd: no such file or directory: ${targetDir}`, true);
+            }
+            updatePrompt();
+        };
+
+        /** Displays the content of a file. */
+        const handleCat = (fileName) => {
+            const currentDir = getCurrentDir();
+            const file = currentDir[fileName];
+
+            if (!file) {
+                printOutput(`cat: ${fileName}: No such file or directory`, true);
+            } else if (file.type === 'dir') {
+                printOutput(`cat: ${fileName}: Is a directory`, true);
+            } else if (file.type === 'file' || file.type === 'link') {
+                printOutput(formatContent(file.content));
+            }
+        };
+
+        /** Executes virtual executables (links). */
+        const handleOpen = (fileName) => {
+            const currentDir = getCurrentDir();
+            const file = currentDir[fileName];
+
+            if (!file) {
+                printOutput(`open: ${fileName}: No such file or executable`, true);
+            } else if (file.type === 'dir') {
+                printOutput(`open: ${fileName}: Cannot open a directory`, true);
+            } else if (fileName.endsWith('.exe') && file.type === 'link') {
+                window.open(file.content, '_blank');
+                printOutput(`Opened ${fileName} in a new tab...`);
+            } else if (fileName.endsWith('.txt')) {
+                printOutput(`To open a .txt file, please use the 'cat' command.`, true);
+            } else {
+                printOutput(`open: ${fileName}: Unknown file type or command is not designed to execute this file.`, true);
+            }
+        };
+
+        /** Displays user context. */
+        const handleWhoami = () => {
+            printOutput(`User: <span class="prompt-color">${userName}</span>`);
+            printOutput(`Environment: <span class="prompt-color">${hostName} (Linux kernel 5.10.10)</span>`);
+        };
+
+        /** Clears the terminal history. */
+        const handleClear = () => {
+            outputHistory.innerHTML = '';
+        };
+
+        // --- MAIN COMMAND PROCESSING ---
+
+        const processCommand = (input) => {
+            if (!input) return;
+
+            // 1. Log command and add to history
+            printCommand(input);
+            commandHistory.push(input);
+            historyIndex = commandHistory.length; // Reset history index
+
+            const parts = input.trim().split(/\s+/);
+            const command = parts[0].toLowerCase();
+            const args = parts.slice(1);
+
+            switch (command) {
+                case 'info':
+                case 'help':
+                    handleInfo();
+                    break;
+                case 'ls':
+                    handleLs();
+                    break;
+                case 'cd':
+                    handleCd(args[0]);
+                    break;
+                case 'cat':
+                    handleCat(args[0]);
+                    break;
+                case 'open':
+                    handleOpen(args[0]);
+                    break;
+                case 'clear':
+                    handleClear();
+                    break;
+                case 'whoami':
+                    handleWhoami();
+                    break;
+                case '':
+                    // Do nothing if command is empty
+                    break;
+                default:
+                    printOutput(`-bash: ${command}: command not found. Try 'info' for available commands.`, true);
+            }
+        };
+
+
+        // --- EVENT LISTENERS ---
+
+        commandInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const input = commandInput.value.trim();
+                processCommand(input);
+                commandInput.value = '';
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (historyIndex > 0) {
+                    historyIndex--;
+                    commandInput.value = commandHistory[historyIndex];
+                }
+            } else if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (historyIndex < commandHistory.length - 1) {
+                    historyIndex++;
+                    commandInput.value = commandHistory[historyIndex];
+                } else {
+                    historyIndex = commandHistory.length;
+                    commandInput.value = '';
+                }
+            }
+        });
+
+        // Autofocus on the input field when the body is clicked
+        document.body.addEventListener('click', () => {
+            commandInput.focus();
+        });
+
+
+        // --- INITIALIZATION ---
+
+        const initTerminal = () => {
+            updatePrompt();
+            commandInput.focus();
+            
+            // Print welcome message and initial help using 'cat info.txt' logic
+            const rootContents = fileSystem.userDevKataria.contents;
+            const infoFile = rootContents['info.txt'];
+            printOutput('Dev Kataria Terminal Portfolio [Version 1.0.0]');
+            printOutput('Copyright (c) 2025 Dev Kataria. All rights reserved.');
+            printOutput('');
+            if (infoFile) {
+                printOutput(formatContent(infoFile.content));
+            } else {
+                 printOutput('Error: info.txt file not found.', true);
+            }
+            printOutput('');
+
+        };
+
+        window.onload = initTerminal;
+    </script>
+
+</body>
+</html>
